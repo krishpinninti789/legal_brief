@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function Footer() {
   return (
     <footer className="bg-gray-900 text-white py-12">
@@ -5,8 +7,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <div className="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg">
-                Legal Brief
+              <div className=" text-white px-3 py-1 rounded-lg font-bold text-lg">
+                <Image
+                  src={"/app-logo.png"}
+                  width={300}
+                  height={300}
+                  alt="logo"
+                />
               </div>
             </div>
             <p className="text-gray-400 text-sm">

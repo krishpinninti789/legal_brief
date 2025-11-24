@@ -1,4 +1,5 @@
 import { LoginCard } from "@/app/components/Login";
+import Image from "next/image";
 
 export function Header() {
   return (
@@ -7,12 +8,12 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <a
-                href="/"
-                className="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors"
-              >
-                Legal Brief
-              </a>
+              <Image
+                src={"/app-logo.png"}
+                width={300}
+                height={300}
+                alt="logo"
+              />
             </div>
           </div>
           <div className="hidden md:block">
