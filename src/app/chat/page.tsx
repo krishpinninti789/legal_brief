@@ -49,22 +49,55 @@ export default function ChatPage() {
       sender: "user",
       timestamp: new Date(),
     };
-
+    // Add user message
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
 
-    // Simulate AI response (replace with actual AI integration)
-    setTimeout(() => {
+    try {
+      // Call your API route
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contentObj: {
+            contentText: userMessage.content,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await res.json();
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: `I understand you're asking about "${userMessage.content}". This appears to be a legal matter that may involve contract law, employment rights, or regulatory compliance. Let me provide you with some preliminary guidance:\n\n• First, consider the jurisdiction and applicable laws\n• Review any relevant documentation or contracts\n• Consider consulting with a qualified attorney for complex matters\n\nWould you like me to elaborate on any specific aspect of this legal question?`,
+        content:
+          typeof data === "string" ? data : JSON.stringify(data, null, 2), // pretty print if JSON
         sender: "ai",
         timestamp: new Date(),
       };
+
+      // Add AI message
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("AI Error:", error);
+
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        content: "⚠️ Failed to get response. Please try again.",
+        sender: "ai",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
