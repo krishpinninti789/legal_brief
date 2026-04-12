@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -14,7 +13,9 @@ export default function Home() {
             <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
               <h1 className="text-4xl font-bold text-gray-900 tracking-tight sm:text-5xl lg:text-6xl">
                 Your Personal
-                <span className="block text-blue-600">Legal AI Assistant</span>
+                <span className="block text-blue-600">
+                  Legal Doc Summarizer
+                </span>
               </h1>
               <p className="mt-6 text-lg text-gray-600 sm:max-w-xl sm:mx-auto lg:mx-0">
                 Say goodbye to expensive legal consultation, long waits for
@@ -87,7 +88,8 @@ export default function Home() {
             </h2>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
               Explore features that boost your productivity. From document
-              automation to advanced research, we've got the hard work covered.
+              automation to advanced research, we&apos;ve got the hard work
+              covered.
             </p>
           </div>
 
@@ -183,8 +185,8 @@ export default function Home() {
                 Private
               </h3>
               <p className="text-gray-600">
-                We stand firm on privacy, ensuring that users' conversations
-                remain secure and anonymous.
+                We stand firm on privacy, ensuring that users&apos;
+                conversations remain secure and anonymous.
               </p>
             </div>
 
@@ -236,9 +238,9 @@ export default function Home() {
               Who is Legal AI For?
             </h2>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-              Whether you're a consumer, a student, a solo lawyer, or a full law
-              firm - Legal AI adapts to your legal needs and boosts your
-              productivity.
+              Whether you&apos;re a consumer, a student, a solo lawyer, or a
+              full law firm - Legal AI adapts to your legal needs and boosts
+              your productivity.
             </p>
           </div>
 
@@ -317,9 +319,9 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-600">
-                "Navigating through legal jargon was a maze until Legal AI came
-                to the rescue. Now, I understand complex terms in simple
-                language, making my life a lot easier."
+                &quot;Navigating through legal jargon was a maze until Legal AI
+                came to the rescue. Now, I understand complex terms in simple
+                language, making my life a lot easier.&quot;
               </p>
             </div>
 
@@ -334,9 +336,9 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-600">
-                "It's like having a personal assistant on standby. The AI-driven
-                assistance in composing documents and analyzing contracts has
-                freed up so much of my time."
+                &quot;It&apos;s like having a personal assistant on standby. The
+                AI-driven assistance in composing documents and analyzing
+                contracts has freed up so much of my time.&quot;
               </p>
             </div>
 
@@ -351,8 +353,9 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-600">
-                "Legal AI has been a beacon, assisting me with research writing
-                and case briefs, making my academic journey less daunting."
+                &quot;Legal AI has been a beacon, assisting me with research
+                writing and case briefs, making my academic journey less
+                daunting.&quot;
               </p>
             </div>
           </div>

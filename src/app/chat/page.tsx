@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   SignedIn,
   SignedOut,
@@ -8,7 +9,6 @@ import {
 } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 
 interface Message {
   id: string;
@@ -172,20 +172,20 @@ export default function ChatPage() {
             {/* Navigation Links */}
             <div className="p-4 border-t border-gray-700">
               <div className="space-y-2">
-                <a
+                <Link
                   href="/dashboard"
                   className="flex items-center text-sm hover:text-blue-300 transition-colors"
                 >
                   <span className="mr-2">📊</span>
                   Dashboard
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/"
                   className="flex items-center text-sm hover:text-blue-300 transition-colors"
                 >
                   <span className="mr-2">🏠</span>
                   Home
-                </a>
+                </Link>
               </div>
             </div>
           </div>
