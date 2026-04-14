@@ -12,18 +12,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar-pro",
-        messages: [
-          {
-            role: "system",
-            content: `
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "nvidia/nemotron-3-super-120b-a12b:free",
+          messages: [
+            {
+              role: "system",
+              content: `
 You are a legal assistant chatbot.
 Reply in clean, simple text.
 Do NOT use citations, references, brackets, tables, or markdown.
@@ -32,14 +34,15 @@ Do NOT use ### or **.
 Give short, structured answers.
 Focus only on the user's country (India unless stated).
 `,
-          },
-          {
-            role: "user",
-            content: content,
-          },
-        ],
-      }),
-    });
+            },
+            {
+              role: "user",
+              content: content,
+            },
+          ],
+        }),
+      },
+    );
 
     const data = await response.json();
     console.log("Server----", data);

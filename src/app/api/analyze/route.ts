@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
 
 export const runtime = "nodejs";
-
-type Provider = "perplexity" | "openai";
 
 interface AnalysisResult {
   summary: string;
@@ -19,7 +16,7 @@ interface AnalysisResult {
   };
 }
 
-const JSON_SCHEMA_PROMPT = `Analyze the legal document and return ONLY valid JSON with this exact shape:
+const SYSTEM_PROMPT = `Analyze the legal document and return ONLY valid JSON with this exact shape:
 {
   "summary": "string",
   "keyPoints": ["string"],
@@ -40,46 +37,24 @@ Rules:
 - Output JSON only, no markdown.`;
 
 function sanitizeRiskLevel(value: string): "Low" | "Medium" | "High" {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "high") return "High";
-  if (normalized === "medium") return "Medium";
+  const v = value.trim().toLowerCase();
+  if (v === "high") return "High";
+  if (v === "medium") return "Medium";
   return "Low";
 }
 
-function fallbackAnalysis(rawText: string): AnalysisResult {
-  return {
-    summary:
-      rawText.slice(0, 800) || "No structured analysis returned by model.",
-    keyPoints: [],
-    documentType: "Legal Document",
-    riskLevel: "Low",
-    recommendations: [],
-    details: {
-      parties: [],
-      dates: [],
-      amounts: [],
-      obligations: [],
-    },
-  };
-}
+function parseAnalysis(content: string): AnalysisResult {
+  const start = content.indexOf("{");
+  const end = content.lastIndexOf("}");
 
-function extractFirstJsonObject(value: string): string | null {
-  const start = value.indexOf("{");
-  const end = value.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
-  return value.slice(start, end + 1);
-}
-
-function parseModelAnalysis(content: string): AnalysisResult {
-  const jsonText = extractFirstJsonObject(content);
-  if (!jsonText) {
-    return fallbackAnalysis(content);
+    return fallback(content);
   }
 
   try {
-    const parsed = JSON.parse(jsonText) as Partial<AnalysisResult>;
+    const parsed = JSON.parse(
+      content.slice(start, end + 1),
+    ) as Partial<AnalysisResult>;
     return {
       summary: parsed.summary ?? "No summary provided.",
       keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
@@ -90,177 +65,100 @@ function parseModelAnalysis(content: string): AnalysisResult {
         : [],
       details: {
         parties: Array.isArray(parsed.details?.parties)
-          ? parsed.details.parties
+          ? parsed.details!.parties
           : [],
-        dates: Array.isArray(parsed.details?.dates) ? parsed.details.dates : [],
+        dates: Array.isArray(parsed.details?.dates)
+          ? parsed.details!.dates
+          : [],
         amounts: Array.isArray(parsed.details?.amounts)
-          ? parsed.details.amounts
+          ? parsed.details!.amounts
           : [],
         obligations: Array.isArray(parsed.details?.obligations)
-          ? parsed.details.obligations
+          ? parsed.details!.obligations
           : [],
       },
     };
   } catch {
-    return fallbackAnalysis(content);
+    return fallback(content);
   }
 }
 
-async function extractDocumentText(file: File): Promise<string> {
-  if (file.type === "application/pdf") {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const parser = new PDFParse({ data: buffer });
-    try {
-      const parsed = await parser.getText();
-      return parsed.text;
-    } finally {
-      await parser.destroy();
-    }
-  }
-
-  return file.text();
-}
-
-function getProviderConfig(provider: Provider, model?: string) {
-  if (provider === "openai") {
-    return {
-      apiKey: process.env.OPENAI_API_KEY,
-      endpoint: "https://api.openai.com/v1/chat/completions",
-      model: model || process.env.OPENAI_MODEL || "gpt-4.1-mini",
-    };
-  }
-
+function fallback(raw: string): AnalysisResult {
   return {
-    apiKey: process.env.PERPLEXITY_API_KEY,
-    endpoint: "https://api.perplexity.ai/chat/completions",
-    model: model || process.env.PERPLEXITY_MODEL || "sonar",
+    summary: raw.slice(0, 800) || "No analysis returned.",
+    keyPoints: [],
+    documentType: "Legal Document",
+    riskLevel: "Low",
+    recommendations: [],
+    details: { parties: [], dates: [], amounts: [], obligations: [] },
   };
 }
 
-async function directFileForward(file: File) {
-  const directApiUrl = process.env.DOCUMENT_ANALYZER_UPLOAD_URL;
-  const directApiKey = process.env.DOCUMENT_ANALYZER_API_KEY;
-
-  if (!directApiUrl || !directApiKey) {
-    return NextResponse.json(
-      {
-        error:
-          "Direct mode is not configured. Add DOCUMENT_ANALYZER_UPLOAD_URL and DOCUMENT_ANALYZER_API_KEY.",
-      },
-      { status: 500 },
-    );
+async function extractText(file: File): Promise<string> {
+  if (file.type === "application/pdf") {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { default: pdfParse } = await import("@cedrugs/pdf-parse");
+    const result = await pdfParse(buffer);
+    return result.text;
   }
-
-  const outboundForm = new FormData();
-  outboundForm.append("file", file, file.name);
-
-  const response = await fetch(directApiUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${directApiKey}`,
-    },
-    body: outboundForm,
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    return NextResponse.json(
-      {
-        error: "Direct API request failed",
-        status: response.status,
-        details: data,
-      },
-      { status: response.status },
-    );
-  }
-
-  return NextResponse.json({
-    mode: "direct",
-    providerResponse: data,
-  });
+  return file.text();
 }
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get("file");
-    const mode = (formData.get("mode")?.toString() || "extract").toLowerCase();
-    const provider =
-      (formData.get("provider")?.toString().toLowerCase() as Provider) ||
-      "perplexity";
-    const model = formData.get("model")?.toString();
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    if (mode === "direct") {
-      return directFileForward(file);
-    }
-
-    const providerConfig = getProviderConfig(provider, model);
-    if (!providerConfig.apiKey) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
       return NextResponse.json(
-        { error: `Missing API key for provider: ${provider}` },
+        { error: "Missing OPENROUTER_API_KEY" },
         { status: 500 },
       );
     }
 
-    const extractedText = await extractDocumentText(file);
-    const prompt = formData.get("prompt")?.toString() || JSON_SCHEMA_PROMPT;
+    const text = await extractText(file);
 
-    const llmResponse = await fetch(providerConfig.endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${providerConfig.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: providerConfig.model,
-        messages: [
-          {
-            role: "user",
-            content: `${prompt}\n\nDocument content:\n${extractedText}`,
-          },
-        ],
-      }),
-    });
-
-    const llmData = await llmResponse.json().catch(() => ({}));
-
-    if (!llmResponse.ok) {
-      return NextResponse.json(
-        {
-          error: "LLM analysis request failed",
-          status: llmResponse.status,
-          details: llmData,
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
-        { status: llmResponse.status },
+        body: JSON.stringify({
+          model: "nvidia/nemotron-3-super-120b-a12b:free",
+          messages: [
+            {
+              role: "user",
+              content: `${SYSTEM_PROMPT}\n\nDocument content:\n${text}`,
+            },
+          ],
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "LLM request failed", details: data },
+        { status: response.status },
       );
     }
 
-    const content =
-      llmData?.choices?.[0]?.message?.content ||
-      llmData?.choices?.[0]?.text ||
-      "";
+    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    const analysis = parseAnalysis(content);
 
-    const analysis = parseModelAnalysis(content);
-
-    return NextResponse.json({
-      mode: "extract",
-      provider,
-      model: providerConfig.model,
-      extractedText,
-      analysis,
-      raw: llmData,
-    });
+    return NextResponse.json({ analysis, extractedText: text });
   } catch (error) {
     return NextResponse.json(
-      {
-        error: "Something went wrong during document analysis",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },
     );
   }

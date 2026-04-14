@@ -45,7 +45,7 @@ export default function UploadPage() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("mode", "extract");
-    formData.append("provider", "perplexity");
+    formData.append("provider", "openrouter");
 
     const response = await fetch("/api/analyze", {
       method: "POST",
