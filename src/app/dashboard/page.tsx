@@ -38,7 +38,7 @@ export default function DashboardPage() {
               </a>
             </div>
 
-            {/* Recent Summaries Card */}
+            {/* Recent Summaries Card ----*/}
             <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
               <div className="text-green-600 text-2xl mb-4">📊</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
